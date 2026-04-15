@@ -1,41 +1,125 @@
-# SafeSleep AI - Infant Sleep Detection Model
+# SafeSleep AI
 
-Overview
+**AI-powered infant sleep safety detection using computer vision and deep learning.**
 
-SafeSleep AI is an advanced AI-powered infant sleep detection model designed to improve sleep safety for babies. Using computer vision and deep learning, the model detects infant sleep positions and identifies potential hazards such as unsafe objects (e.g., toys, blankets) in the crib. The goal is to help parents and baby monitor companies enhance sleep safety.
+SafeSleep AI monitors infant sleep in real time, classifying sleep positions and flagging potential hazards in the crib. Built on YOLOv8, it's designed for integration with baby monitor hardware and SaaS platforms to give parents and caregivers peace of mind.
 
-Features
+---
 
-Sleep Position Classification: Detects various infant sleep positions, including back, stomach, and side sleeping.
+## Features
 
-Object Detection: Identifies unsafe objects such as loose bedding, toys, and other items that may pose a risk.
+- **Sleep Position Classification** — Detects back, stomach, and side sleeping positions to alert caregivers when an infant shifts to an unsafe orientation.
+- **Hazard Detection** — Identifies loose bedding, toys, pillows, and other objects that pose suffocation or entrapment risks.
+- **Real-Time Processing** — Optimized inference pipeline delivers immediate feedback, suitable for live video feeds.
+- **Cloud Integration** — Supports AWS S3 for image storage and retrieval, enabling scalable data pipelines.
+- **SaaS-Ready API** — Designed as an API-first product for seamless integration with baby monitor companies and smart nursery platforms.
 
-Real-Time Processing: Optimized for real-time detection to provide immediate feedback.
+---
 
-Cloud Storage: Supports integration with AWS S3 for storing and retrieving sleep images.
+## Model Details
 
-API Integration: Designed as a SaaS product for seamless integration with baby monitor companies.
+| Component | Detail |
+|---|---|
+| Architecture | YOLOv8 (Ultralytics) |
+| Framework | PyTorch |
+| Training Data | 1,000+ images with augmentation for improved robustness |
+| Annotation Format | YOLO format |
+| Task | Object detection + classification |
 
-Model Details
+---
 
-Architecture: YOLOv8 for object detection and classification.
+## Getting Started
 
-Training Data: Utilizes a dataset of over 10,000 images, including augmented images for improved model robustness.
+### Prerequisites
 
-Training Framework: PyTorch-based implementation.
+- Python 3.8+
+- PyTorch
+- OpenCV
+- Ultralytics YOLOv8
 
-Annotation Format: YOLO format used for labeled images.
+### Installation
 
-Installation
+```bash
+# Clone the repository
+git clone https://github.com/your-username/safesleep-ai.git
+cd safesleep-ai
 
-To run SafeSleep AI locally, follow these steps:
+# Create and activate a virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-Prerequisites
+# Install dependencies
+pip install -r requirements.txt
+```
 
-Python 3.8+
+### Quick Start
 
-PyTorch
+```python
+from ultralytics import YOLO
 
-OpenCV
+# Load the trained model
+model = YOLO("path/to/safesleep_model.pt")
 
-Ultralytics YOLOv8
+# Run inference on an image
+results = model.predict(source="path/to/crib_image.jpg", conf=0.5)
+
+# Display results
+results[0].show()
+```
+
+### Running Inference on a Video Feed
+
+```python
+# Real-time detection from a webcam or monitor feed
+results = model.predict(source=0, stream=True, conf=0.5)
+
+for result in results:
+    annotated_frame = result.plot()
+    # Process or display annotated_frame as needed
+```
+
+---
+
+## Project Structure
+
+```
+safesleep-ai/
+├── data/               # Training and validation datasets
+├── models/             # Trained model weights
+├── notebooks/          # Exploration and training notebooks
+├── src/                # Source code and utilities
+│   ├── train.py        # Model training script
+│   ├── predict.py      # Inference script
+│   └── utils.py        # Helper functions
+├── api/                # API server for SaaS integration
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## Roadmap
+
+- [ ] Expand training dataset beyond 1,000 images
+- [ ] Add audio-based cry detection as a complementary signal
+- [ ] Build REST API with FastAPI for production deployment
+- [ ] Add support for edge inference (Raspberry Pi, NVIDIA Jetson)
+- [ ] Develop a parent-facing mobile dashboard
+
+---
+
+## Contributing
+
+Contributions are welcome. Please open an issue to discuss proposed changes before submitting a pull request.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## Disclaimer
+
+SafeSleep AI is a supplementary monitoring tool and is **not a substitute for direct adult supervision**. Always follow the safe sleep guidelines recommended by the American Academy of Pediatrics (AAP).
