@@ -1,0 +1,14 @@
+# Large assets — not tracked in git
+datafiles/images/
+runs/
+yolov8n.pt
+testimage2.jpeg
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# macOS
+.DS_Store

@@ -1,0 +1,5 @@
+train: "/Users/brianmason/Desktop/SafeSleep/datafiles/images/train"  # Update with your actual path
+val: "/Users/brianmason/Desktop/SafeSleep/datafiles/images/val"
+
+nc: 4  # Number of classes
+names: ["safe", "unsafe", "toy", "blanket"]  # Class names
