@@ -1,125 +1,137 @@
-# SafeSleep AI
+# SafeSleep
 
-**AI-powered infant sleep safety detection using computer vision and deep learning.**
+Real-time infant sleep safety monitor using computer vision. Detects potentially hazardous objects and conditions in a crib via webcam and alerts caregivers.
 
-SafeSleep AI monitors infant sleep in real time, classifying sleep positions and flagging potential hazards in the crib. Built on YOLOv8, it's designed for integration with baby monitor hardware and SaaS platforms to give parents and caregivers peace of mind.
+## What It Detects
 
----
+| Class | Label | Risk |
+|---|---|---|
+| 0 | safe | Baby sleeping safely — no action needed |
+| 1 | unsafe | Hazardous position detected |
+| 2 | toy | Toy present in crib (choking / SIDS risk) |
+| 3 | blanket | Bedding present (suffocation risk) |
 
-## Features
+## Model
 
-- **Sleep Position Classification** — Detects back, stomach, and side sleeping positions to alert caregivers when an infant shifts to an unsafe orientation.
-- **Hazard Detection** — Identifies loose bedding, toys, pillows, and other objects that pose suffocation or entrapment risks.
-- **Real-Time Processing** — Optimized inference pipeline delivers immediate feedback, suitable for live video feeds.
-- **Cloud Integration** — Supports AWS S3 for image storage and retrieval, enabling scalable data pipelines.
-- **SaaS-Ready API** — Designed as an API-first product for seamless integration with baby monitor companies and smart nursery platforms.
+- Architecture: YOLOv8 Nano (fine-tuned from COCO pretrained weights)
+- Training data: 500 annotated crib images (400 train / 100 val), 80/20 random split
+- Training: 50 epochs, batch size 16, image size 640×640
+- Weights: `runs/detect/train3/weights/best.pt`
 
----
+**Validation performance:**
 
-## Model Details
-
-| Component | Detail |
+| Metric | Value |
 |---|---|
-| Architecture | YOLOv8 (Ultralytics) |
-| Framework | PyTorch |
-| Training Data | 1,000+ images with augmentation for improved robustness |
-| Annotation Format | YOLO format |
-| Task | Object detection + classification |
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.8+
-- PyTorch
-- OpenCV
-- Ultralytics YOLOv8
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/your-username/safesleep-ai.git
-cd safesleep-ai
-
-# Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### Quick Start
-
-```python
-from ultralytics import YOLO
-
-# Load the trained model
-model = YOLO("path/to/safesleep_model.pt")
-
-# Run inference on an image
-results = model.predict(source="path/to/crib_image.jpg", conf=0.5)
-
-# Display results
-results[0].show()
-```
-
-### Running Inference on a Video Feed
-
-```python
-# Real-time detection from a webcam or monitor feed
-results = model.predict(source=0, stream=True, conf=0.5)
-
-for result in results:
-    annotated_frame = result.plot()
-    # Process or display annotated_frame as needed
-```
-
----
+| Precision | 99.0% |
+| Recall | 100% |
+| mAP50 | 99.5% |
+| mAP50-95 | 77.2% |
 
 ## Project Structure
 
 ```
-safesleep-ai/
-├── data/               # Training and validation datasets
-├── models/             # Trained model weights
-├── notebooks/          # Exploration and training notebooks
-├── src/                # Source code and utilities
-│   ├── train.py        # Model training script
-│   ├── predict.py      # Inference script
-│   └── utils.py        # Helper functions
-├── api/                # API server for SaaS integration
-├── requirements.txt
-└── README.md
+SafeSleep/
+├── datafiles/
+│   ├── images/
+│   │   ├── train/          # 400 training images (.jpg)
+│   │   └── val/            # 100 validation images (.jpg)
+│   ├── labels/
+│   │   ├── train/          # YOLO-format annotations for training images
+│   │   └── val/            # YOLO-format annotations for validation images
+│   ├── data.yaml           # Dataset config (paths, class names)
+│   ├── webcam_detect.py    # Local webcam inference with OpenCV display
+│   ├── safesleep.py        # FastAPI MJPEG streaming server
+│   ├── sortimages.py       # Splits dataset into train/val folders (80/20)
+│   └── ranamefiles.py      # Normalizes .jpeg → .jpg before training
+├── runs/
+│   └── detect/
+│       └── train3/         # Final training run — metrics, plots, weights
+│           └── weights/
+│               ├── best.pt # Best checkpoint (use this for inference)
+│               └── last.pt # Final epoch checkpoint
+└── yolov8n.pt              # Base pretrained weights (COCO)
 ```
 
----
+## Setup
 
-## Roadmap
+**Requirements:**
+```
+ultralytics
+opencv-python
+torch
+fastapi
+uvicorn
+```
 
-- [ ] Expand training dataset beyond 1,000 images
-- [ ] Add audio-based cry detection as a complementary signal
-- [ ] Build REST API with FastAPI for production deployment
-- [ ] Add support for edge inference (Raspberry Pi, NVIDIA Jetson)
-- [ ] Develop a parent-facing mobile dashboard
+Install:
+```bash
+pip install ultralytics opencv-python torch fastapi uvicorn
+```
 
----
+## Running Inference
 
-## Contributing
+### Local webcam (OpenCV window)
+```bash
+python datafiles/webcam_detect.py
+```
+Press `q` to quit.
 
-Contributions are welcome. Please open an issue to discuss proposed changes before submitting a pull request.
+### Web streaming server (browser-accessible)
+```bash
+uvicorn datafiles.safesleep:app --host 0.0.0.0 --port 8000
+```
+Then open `http://localhost:8000/video_feed` in a browser. The feed is served as an MJPEG stream.
 
----
+## Training From Scratch
 
-## License
+**1. Prepare images**
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+Rename any `.jpeg` files to `.jpg`:
+```bash
+python datafiles/ranamefiles.py
+```
 
----
+Split into train/val folders:
+```bash
+python datafiles/sortimages.py
+```
 
-## Disclaimer
+**2. Annotate**
 
-SafeSleep AI is a supplementary monitoring tool and is **not a substitute for direct adult supervision**. Always follow the safe sleep guidelines recommended by the American Academy of Pediatrics (AAP).
+Annotations must be in YOLO format — one `.txt` file per image, with the same filename stem. Each line describes one object:
+```
+<class_id> <x_center> <y_center> <width> <height>
+```
+All coordinates are normalized (0.0–1.0) relative to image dimensions.
+
+**3. Train**
+```python
+from ultralytics import YOLO
+
+model = YOLO("yolov8n.pt")
+model.train(
+    data="datafiles/data.yaml",
+    epochs=50,
+    imgsz=640,
+    batch=16,
+)
+```
+
+Best weights will be saved to `runs/detect/trainN/weights/best.pt`.
+
+## Annotation Format
+
+Each label file corresponds to one image and contains one row per detected object:
+
+```
+0 0.544935 0.520746 0.440943 0.408088
+```
+
+Fields: `class  x_center  y_center  width  height` — all as fractions of the image dimensions, so the format is resolution-independent.
+
+## Known Limitations
+
+- **Class imbalance:** `toy` represents only 5% of training data — detection of toys in novel scenarios may be less reliable than other classes.
+- **Single collection environment:** Training data was captured in one setting. Generalization to different lighting, camera angles, or crib types is untested.
+- **No held-out test set:** Validation metrics reflect in-distribution performance only.
+- **Hardcoded paths:** `webcam_detect.py` and `safesleep.py` contain absolute paths that must be updated when running on a different machine.
